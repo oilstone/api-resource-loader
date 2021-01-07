@@ -18,15 +18,5 @@
         "psr-4": {
             "Oilstone\\ApiResourceLoader\\": "src"
         }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Oilstone\\ApiResourceLoader\\Integrations\\Laravel\\Providers\\ServiceProvider"
-            ],
-            "aliases": {
-                "Debugbar": "Barryvdh\\Debugbar\\Facade"
-            }
-        }
     }
 }
