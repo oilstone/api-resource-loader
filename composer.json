@@ -1,0 +1,32 @@
+{
+    "name": "oilstone/api-resource-loader",
+    "description": "An extension of the garethhudson07/api to add class based resource resolution",
+    "homepage": "https://github.com/oilstone/api-resource-loader",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Online Solutions",
+            "email": "support@onlinesolutionsltd.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4.0",
+        "garethhudson07/api": "^3.0",
+        "illuminate/support": "^7.0|^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Oilstone\\ApiResourceLoader\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Oilstone\\ApiResourceLoader\\Integrations\\Laravel\\Providers\\ServiceProvider"
+            ],
+            "aliases": {
+                "Debugbar": "Barryvdh\\Debugbar\\Facade"
+            }
+        }
+    }
+}
