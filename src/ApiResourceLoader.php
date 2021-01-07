@@ -23,19 +23,11 @@ class ApiResourceLoader
     protected string $schemaFactory = '';
 
     /**
-     * @param $name
-     * @param $arguments
-     * @return ApiResourceLoader|null
+     * @return ApiResourceLoader
      */
-    public static function __callStatic($name, $arguments): ?ApiResourceLoader
+    public static function make(): ApiResourceLoader
     {
-        $self = new static;
-
-        if (method_exists($self, $name)) {
-            return $self->{$name}(...$arguments);
-        }
-
-        return null;
+        return new static;
     }
 
     /**
