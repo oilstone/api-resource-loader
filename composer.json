@@ -11,7 +11,7 @@
     ],
     "require": {
         "php": ">=7.4.0",
-        "garethhudson07/api": "^3.0",
+        "garethhudson07/api": "^1.0|^2.0|^3.0",
         "illuminate/support": "^7.0|^8.0"
     },
     "autoload": {
