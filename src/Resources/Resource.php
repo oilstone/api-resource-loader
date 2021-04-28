@@ -11,6 +11,8 @@ use Api\Schema\Schema as BaseSchema;
 use Closure;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ServerRequestInterface;
+use ReflectionClass;
+use ReflectionException;
 use Stitch\Model;
 
 /**
@@ -22,7 +24,7 @@ abstract class Resource
     /**
      * @var string
      */
-    protected string $endpoint;
+    protected static string $endpoint;
 
     /**
      * @var bool
@@ -92,42 +94,48 @@ abstract class Resource
     /**
      * @return string
      */
-    public function endpoint(): string
+    public static function endpoint(): string
     {
-        if (!isset($this->endpoint)) {
-            return Str::kebab(Str::pluralStudly(class_basename($this)));
+        if (!isset(static::$endpoint)) {
+            try {
+                $reflect = new ReflectionClass(get_called_class());
+
+                return Str::kebab(Str::pluralStudly($reflect->getShortName()));
+            } catch (ReflectionException $e) {
+                //
+            }
         }
 
-        return $this->endpoint;
+        return static::$endpoint;
     }
 
     /**
-     * @return Closure
+     * @param Factory $factory
+     * @param ApiContainer $container
+     * @return ApiResource
      */
-    public function make(): Closure
+    public function make(Factory $factory, ApiContainer $container): ApiResource
     {
-        return function (Factory $factory, ApiContainer $container) {
-            /** @var ApiResource $resource */
-            $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->schema(), $this->repository($container->get('guard.sentinel')));
+        /** @var ApiResource $resource */
+        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->schema(), $this->repository($container->get('guard.sentinel')));
 
-            if ($this->only) {
-                $resource->only(...$this->only);
-            }
+        if ($this->only) {
+            $resource->only(...$this->only);
+        }
 
-            if ($this->except) {
-                $resource->except(...$this->only);
-            }
+        if ($this->except) {
+            $resource->except(...$this->only);
+        }
 
-            foreach (['belongsTo', 'hasMany', 'hasOne', 'nest'] as $type) {
-                if ($this->{$type}) {
-                    foreach ($this->{$type} as $relation) {
-                        $resource->{$type}(...$this->getRelation($type, $relation));
-                    }
+        foreach (['belongsTo', 'hasMany', 'hasOne', 'nest'] as $type) {
+            if ($this->{$type}) {
+                foreach ($this->{$type} as $relation) {
+                    $resource->{$type}(...$this->getRelation($type, $relation));
                 }
             }
+        }
 
-            return $resource;
-        };
+        return $resource;
     }
 
     /**

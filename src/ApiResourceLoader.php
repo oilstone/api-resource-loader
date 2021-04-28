@@ -3,6 +3,8 @@
 namespace Oilstone\ApiResourceLoader;
 
 use Api\Api;
+use Api\Container as ApiContainer;
+use Api\Resources\Factory;
 use Illuminate\Support\Str;
 use Oilstone\ApiResourceLoader\Resources\Resource;
 use Psr\Http\Message\ServerRequestInterface;
@@ -80,10 +82,9 @@ class ApiResourceLoader
             $className = Str::finish($namespace, '\\') . basename($resourceName, '.php');
 
             if (is_subclass_of($className, Resource::class)) {
-                /** @var Resource $resource */
-                $resource = new $className();
-
-                $this->api->register($resource->endpoint(), $resource->withSchemaFactory($this->schemaFactory)->withRequest($this->request)->make());
+                $this->api->register($className::endpoint(), function (Factory $factory, ApiContainer $container) use ($className) {
+                    return (new $className())->withSchemaFactory($this->schemaFactory)->withRequest($this->request)->make($factory, $container);
+                });
             }
         }
 
