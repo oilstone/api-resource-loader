@@ -5,6 +5,7 @@ namespace Oilstone\ApiResourceLoader;
 use Api\Api;
 use Illuminate\Support\Str;
 use Oilstone\ApiResourceLoader\Resources\Resource;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Class ApiResourceLoader
@@ -21,6 +22,11 @@ class ApiResourceLoader
      * @var string
      */
     protected string $schemaFactory = '';
+
+    /**
+     * @var ServerRequestInterface|null
+     */
+    protected ?ServerRequestInterface $request = null;
 
     /**
      * @return ApiResourceLoader
@@ -53,6 +59,17 @@ class ApiResourceLoader
     }
 
     /**
+     * @param ServerRequestInterface $request
+     * @return $this
+     */
+    public function request(ServerRequestInterface $request): self
+    {
+        $this->request = $request;
+
+        return $this;
+    }
+
+    /**
      * @param string $path
      * @param string|null $namespace
      * @return $this
@@ -66,7 +83,7 @@ class ApiResourceLoader
                 /** @var Resource $resource */
                 $resource = new $className();
 
-                $this->api->register($resource->endpoint(), $resource->withSchemaFactory($this->schemaFactory)->make());
+                $this->api->register($resource->endpoint(), $resource->withSchemaFactory($this->schemaFactory)->withRequest($this->request)->make());
             }
         }
 

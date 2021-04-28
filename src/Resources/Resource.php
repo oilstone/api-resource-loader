@@ -10,6 +10,8 @@ use Api\Resources\Resource as ApiResource;
 use Api\Schema\Schema as BaseSchema;
 use Closure;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ServerRequestInterface;
+use Stitch\Model;
 
 /**
  * Class Resource
@@ -31,6 +33,11 @@ abstract class Resource
      * @var string|null
      */
     protected ?string $schema = null;
+
+    /**
+     * @var string|null
+     */
+    protected ?string $model = null;
 
     /**
      * @var string|null
@@ -71,6 +78,16 @@ abstract class Resource
      * @var string
      */
     protected string $schemaFactory;
+
+    /**
+     * @var string
+     */
+    protected string $modelFactory;
+
+    /**
+     * @var ServerRequestInterface|null
+     */
+    protected ?ServerRequestInterface $request;
 
     /**
      * @return string
@@ -118,8 +135,8 @@ abstract class Resource
      */
     public function schema(): Closure
     {
-        if ($this->schemaFactory) {
-            $schema = isset($this->schema) ? $this->schema : lcfirst(class_basename($this));
+        if (isset($this->schemaFactory)) {
+            $schema = $this->schema ?? lcfirst(class_basename($this));
 
             if (method_exists($this->schemaFactory, $schema)) {
                 return $this->schemaFactory::{$schema}();
@@ -166,12 +183,50 @@ abstract class Resource
     }
 
     /**
+     * @return Model|null
+     */
+    public function model(): ?Model
+    {
+        if (isset($this->modelFactory)) {
+            $model = $this->model ?? lcfirst(class_basename($this));
+
+            if (method_exists($this->modelFactory, $model)) {
+                return $this->modelFactory::{$model}();
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param string $schemaFactory
      * @return $this
      */
     public function withSchemaFactory(string $schemaFactory): self
     {
         $this->schemaFactory = $schemaFactory;
+
+        return $this;
+    }
+
+    /**
+     * @param string $modelFactory
+     * @return $this
+     */
+    public function withModelFactory(string $modelFactory): self
+    {
+        $this->modelFactory = $modelFactory;
+
+        return $this;
+    }
+
+    /**
+     * @param ServerRequestInterface|null $request
+     * @return $this
+     */
+    public function withRequest(?ServerRequestInterface $request): self
+    {
+        $this->request = $request;
 
         return $this;
     }
