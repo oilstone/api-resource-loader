@@ -11,8 +11,6 @@ use Api\Schema\Schema as BaseSchema;
 use Closure;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ServerRequestInterface;
-use ReflectionClass;
-use ReflectionException;
 use Stitch\Model;
 
 /**
@@ -97,13 +95,7 @@ abstract class Resource
     public static function endpoint(): string
     {
         if (!isset(static::$endpoint)) {
-            try {
-                $reflect = new ReflectionClass(get_called_class());
-
-                return Str::kebab(Str::pluralStudly($reflect->getShortName()));
-            } catch (ReflectionException $e) {
-                //
-            }
+            return Str::kebab(Str::pluralStudly(class_basename(static::class)));
         }
 
         return static::$endpoint;
