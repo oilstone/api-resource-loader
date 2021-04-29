@@ -240,7 +240,7 @@ abstract class Resource
      */
     public function withSentinel(?Sentinel $sentinel): self
     {
-        $this->request = $sentinel;
+        $this->sentinel = $sentinel;
 
         return $this;
     }
