@@ -2,7 +2,6 @@
 
 namespace Oilstone\ApiResourceLoader\Resources;
 
-use Api\Container as ApiContainer;
 use Api\Guards\OAuth2\Sentinel;
 use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Resources\Factory;
@@ -90,6 +89,11 @@ abstract class Resource
     protected ?ServerRequestInterface $request;
 
     /**
+     * @var Sentinel|null
+     */
+    protected ?Sentinel $sentinel;
+
+    /**
      * @return string
      */
     public static function endpoint(): string
@@ -103,13 +107,12 @@ abstract class Resource
 
     /**
      * @param Factory $factory
-     * @param ApiContainer $container
      * @return ApiResource
      */
-    public function make(Factory $factory, ApiContainer $container): ApiResource
+    public function make(Factory $factory): ApiResource
     {
         /** @var ApiResource $resource */
-        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->schema(), $this->repository($container->get('guard.sentinel')));
+        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->schema(), $this->repository($this->sentinel));
 
         if ($this->only) {
             $resource->only(...$this->only);
@@ -227,6 +230,17 @@ abstract class Resource
     public function withRequest(?ServerRequestInterface $request): self
     {
         $this->request = $request;
+
+        return $this;
+    }
+
+    /**
+     * @param Sentinel|null $sentinel
+     * @return $this
+     */
+    public function withSentinel(?Sentinel $sentinel): self
+    {
+        $this->request = $sentinel;
 
         return $this;
     }
