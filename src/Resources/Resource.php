@@ -10,7 +10,6 @@ use Api\Schema\Schema as BaseSchema;
 use Closure;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ServerRequestInterface;
-use Stitch\Model;
 
 /**
  * Class Resource
@@ -32,11 +31,6 @@ abstract class Resource
      * @var string|null
      */
     protected ?string $schema = null;
-
-    /**
-     * @var string|null
-     */
-    protected ?string $model = null;
 
     /**
      * @var string|null
@@ -74,14 +68,14 @@ abstract class Resource
     protected array $only = [];
 
     /**
-     * @var string
+     * @var array[]
      */
-    protected string $schemaFactory;
+    protected array $listeners = [];
 
     /**
      * @var string
      */
-    protected string $modelFactory;
+    protected string $schemaFactory;
 
     /**
      * @var ServerRequestInterface|null
@@ -112,7 +106,7 @@ abstract class Resource
     public function make(Factory $factory): ApiResource
     {
         /** @var ApiResource $resource */
-        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->schema(), $this->repository($this->sentinel));
+        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->getSchema(), $this->getRepository($this->sentinel));
 
         if ($this->only) {
             $resource->only(...$this->only);
@@ -130,13 +124,21 @@ abstract class Resource
             }
         }
 
+        if ($this->listeners) {
+            foreach ($this->listeners as $event => $eventListeners) {
+                foreach ($eventListeners as $eventListener) {
+                    $resource->listen($event, $eventListener);
+                }
+            }
+        }
+
         return $resource;
     }
 
     /**
      * @return Closure
      */
-    public function schema(): Closure
+    public function getSchema(): Closure
     {
         if (isset($this->schemaFactory)) {
             $schema = $this->schema ?? lcfirst(class_basename($this));
@@ -147,20 +149,42 @@ abstract class Resource
         }
 
         return function (BaseSchema $schema) {
-            //
+            if (method_exists($this, 'schema')) {
+                $this->schema($schema);
+            }
         };
+    }
+
+    /**
+     * @param BaseSchema $schema
+     */
+    public function schema(BaseSchema $schema): void
+    {
+        //
     }
 
     /**
      * @param Sentinel|null $sentinel
      * @return RepositoryContract|null
      */
-    public function repository(?Sentinel $sentinel): ?RepositoryContract
+    public function getRepository(?Sentinel $sentinel): ?RepositoryContract
     {
         if (isset($this->repository)) {
             return new $this->repository($sentinel);
         }
 
+        if (method_exists($this, 'repository')) {
+            return $this->repository();
+        }
+
+        return null;
+    }
+
+    /**
+     * @return RepositoryContract|null
+     */
+    public function repository(): ?RepositoryContract
+    {
         return null;
     }
 
@@ -186,39 +210,12 @@ abstract class Resource
     }
 
     /**
-     * @return Model|null
-     */
-    public function model(): ?Model
-    {
-        if (isset($this->modelFactory)) {
-            $model = $this->model ?? lcfirst(class_basename($this));
-
-            if (method_exists($this->modelFactory, $model)) {
-                return $this->modelFactory::{$model}();
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * @param string $schemaFactory
      * @return $this
      */
     public function withSchemaFactory(string $schemaFactory): self
     {
         $this->schemaFactory = $schemaFactory;
-
-        return $this;
-    }
-
-    /**
-     * @param string $modelFactory
-     * @return $this
-     */
-    public function withModelFactory(string $modelFactory): self
-    {
-        $this->modelFactory = $modelFactory;
 
         return $this;
     }
