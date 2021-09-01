@@ -5,10 +5,12 @@ namespace Oilstone\ApiResourceLoader\Resources;
 use Api\Guards\OAuth2\Sentinel;
 use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Repositories\Stitch\Resource as StitchRepository;
+use Api\Schema\Schema as BaseSchema;
+use Api\Schema\Stitch\Property;
 use Api\Schema\Stitch\Schema;
 use Closure;
-use Oilstone\ApiResourceLoader\Listeners\HandleTimestamps;
 use Oilstone\ApiResourceLoader\Listeners\HandleSoftDeletes;
+use Oilstone\ApiResourceLoader\Listeners\HandleTimestamps;
 use Stitch\DBAL\Schema\Table;
 use Stitch\Model;
 
@@ -76,28 +78,49 @@ class Stitch extends Resource
             return $this->model();
         }
 
-        return $this->makeModel($this->getSchema()());
+        $schema = new Schema();
+        $closure = $this->getSchema();
+        $closure($schema);
+
+        return $this->makeModel($schema);
     }
 
     /**
-     * @return Model|null
+     * @return Closure
      */
-    public function model(): ?Model
+    public function getSchema(): Closure
     {
-        return null;
+        if (isset($this->schemaFactory)) {
+            $schema = $this->schema ?? lcfirst(class_basename($this));
+
+            if (method_exists($this->schemaFactory, $schema)) {
+                return $this->schemaFactory::{$schema}();
+            }
+        }
+
+        return function (BaseSchema $schema) {
+            if (method_exists($this, 'schema')) {
+                $this->schema($schema);
+            }
+        };
     }
 
     /**
      * @param Schema $schema
      * @return Model
      */
-    protected function makeModel(Schema $schema): Model
+    protected function makeModel(BaseSchema $schema): Model
     {
         $model = \Stitch\Stitch::make(function (Table $table) use ($schema) {
             $table->name($schema->getTable()->getName());
 
+            /** @var Property $property */
             foreach ($schema->getProperties() as $property) {
-                $table->{$property->getColumn()->getType()}($property->getColumn()->getName());
+                $column = $table->{$property->getColumn()->getType()}($property->getColumn()->getName());
+
+                if ($property->getColumn()->isPrimary()) {
+                    $column->primary();
+                }
             }
 
             if ($this->usesTimestamps()) {
@@ -122,26 +145,6 @@ class Stitch extends Resource
         }
 
         return $model;
-    }
-
-    /**
-     * @return Closure
-     */
-    public function getSchema(): Closure
-    {
-        if (isset($this->schemaFactory)) {
-            $schema = $this->schema ?? lcfirst(class_basename($this));
-
-            if (method_exists($this->schemaFactory, $schema)) {
-                return $this->schemaFactory::{$schema}();
-            }
-        }
-
-        return function (Schema $schema) {
-            if (method_exists($this, 'schema')) {
-                $this->schema($schema);
-            }
-        };
     }
 
     /**

@@ -156,35 +156,25 @@ abstract class Resource
     }
 
     /**
-     * @param BaseSchema $schema
-     */
-    public function schema(BaseSchema $schema): void
-    {
-        //
-    }
-
-    /**
      * @param Sentinel|null $sentinel
      * @return RepositoryContract|null
      */
     public function getRepository(?Sentinel $sentinel): ?RepositoryContract
     {
         if (isset($this->repository)) {
-            return new $this->repository($sentinel);
+            $repository = new $this->repository($sentinel);
+
+            if (method_exists($repository, 'setSentinel')) {
+                $repository->setSentinel($sentinel);
+            }
+
+            return $repository;
         }
 
         if (method_exists($this, 'repository')) {
-            return $this->repository();
+            return $this->repository($sentinel);
         }
 
-        return null;
-    }
-
-    /**
-     * @return RepositoryContract|null
-     */
-    public function repository(): ?RepositoryContract
-    {
         return null;
     }
 
