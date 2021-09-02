@@ -6,8 +6,8 @@ use Api\Guards\OAuth2\Sentinel;
 use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Resources\Factory;
 use Api\Resources\Resource as ApiResource;
+use Api\Schema\Schema;
 use Api\Schema\Schema as BaseSchema;
-use Closure;
 use Illuminate\Support\Str;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -136,23 +136,23 @@ abstract class Resource
     }
 
     /**
-     * @return Closure
+     * @return BaseSchema
      */
-    public function getSchema(): Closure
+    public function getSchema(): Schema
     {
         if (isset($this->schemaFactory)) {
             $schema = $this->schema ?? lcfirst(class_basename($this));
 
-            if (method_exists($this->schemaFactory, $schema)) {
-                return $this->schemaFactory::{$schema}();
-            }
+            return $this->schemaFactory::{$schema}();
         }
 
-        return function (BaseSchema $schema) {
-            if (method_exists($this, 'schema')) {
-                $this->schema($schema);
-            }
-        };
+        $schema = new Schema();
+
+        if (method_exists($this, 'schema')) {
+            $this->schema($schema);
+        }
+
+        return $schema;
     }
 
     /**

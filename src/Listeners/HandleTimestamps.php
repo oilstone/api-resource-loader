@@ -14,7 +14,7 @@ class HandleTimestamps extends Listener
      * @param Event $event
      * @return void
      */
-    public function inserting(Event $event): void
+    public function creating(Event $event): void
     {
         $event->getPayload()->record
             ->setAttribute('created_at', Carbon::now()->toDateTimeString())

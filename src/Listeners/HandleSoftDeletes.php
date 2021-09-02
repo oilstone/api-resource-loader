@@ -16,7 +16,7 @@ class HandleSoftDeletes extends Listener
      */
     public function fetching(Event $event): void
     {
-        $event->getPayload()->query->where('deleted_at', '!=', null);
+        $event->getPayload()->query->where('deleted_at', '=', null);
     }
 
     /**

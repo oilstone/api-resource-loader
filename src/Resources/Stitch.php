@@ -5,8 +5,6 @@ namespace Oilstone\ApiResourceLoader\Resources;
 use Api\Guards\OAuth2\Sentinel;
 use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Repositories\Stitch\Resource as StitchRepository;
-use Api\Schema\Schema as BaseSchema;
-use Api\Schema\Stitch\Property;
 use Api\Schema\Stitch\Schema;
 use Closure;
 use Oilstone\ApiResourceLoader\Listeners\HandleSoftDeletes;
@@ -69,58 +67,12 @@ class Stitch extends Resource
         if (isset($this->modelFactory)) {
             $model = $this->model ?? lcfirst(class_basename($this));
 
-            if (method_exists($this->modelFactory, $model)) {
-                return $this->modelFactory::{$model}();
-            }
+            return $this->modelFactory::{$model}();
         }
 
-        if (method_exists($this, 'model')) {
-            return $this->model();
-        }
-
-        $schema = new Schema();
-        $closure = $this->getSchema();
-        $closure($schema);
-
-        return $this->makeModel($schema);
-    }
-
-    /**
-     * @return Closure
-     */
-    public function getSchema(): Closure
-    {
-        if (isset($this->schemaFactory)) {
-            $schema = $this->schema ?? lcfirst(class_basename($this));
-
-            if (method_exists($this->schemaFactory, $schema)) {
-                return $this->schemaFactory::{$schema}();
-            }
-        }
-
-        return function (BaseSchema $schema) {
-            if (method_exists($this, 'schema')) {
-                $this->schema($schema);
-            }
-        };
-    }
-
-    /**
-     * @param Schema $schema
-     * @return Model
-     */
-    protected function makeModel(BaseSchema $schema): Model
-    {
-        $model = \Stitch\Stitch::make(function (Table $table) use ($schema) {
-            $table->name($schema->getTable()->getName());
-
-            /** @var Property $property */
-            foreach ($schema->getProperties() as $property) {
-                $column = $table->{$property->getColumn()->getType()}($property->getColumn()->getName());
-
-                if ($property->getColumn()->isPrimary()) {
-                    $column->primary();
-                }
+        $model = \Stitch\Stitch::make(function (Table $table) {
+            if (method_exists($this, 'model')) {
+                $this->model($table);
             }
 
             if ($this->usesTimestamps()) {
@@ -161,5 +113,25 @@ class Stitch extends Resource
     public function usesSoftDeletes(): bool
     {
         return $this->softDeletes;
+    }
+
+    /**
+     * @return Schema
+     */
+    public function getSchema(): Schema
+    {
+        if (isset($this->schemaFactory)) {
+            $schema = $this->schema ?? lcfirst(class_basename($this));
+
+            return $this->schemaFactory::{$schema}();
+        }
+
+        $schema = new Schema($this->getModel()->getTable());
+
+        if (method_exists($this, 'schema')) {
+            $this->schema($schema);
+        }
+
+        return $schema;
     }
 }

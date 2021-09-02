@@ -55,7 +55,7 @@ class ApiResourceLoader
 
     /**
      * @param string $path
-     * @param string|null $namespace
+     * @param string $namespace
      * @return $this
      */
     public function loadResourcesFromPath(string $path, string $namespace): self
