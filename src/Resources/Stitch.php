@@ -64,9 +64,9 @@ class Stitch extends Resource
      */
     public function getModel(): Model
     {
-        if (isset($this->modelFactory)) {
-            $model = $this->model ?? lcfirst(class_basename($this));
+        $model = $this->model ?? lcfirst(class_basename($this));
 
+        if (isset($this->modelFactory) && method_exists($this->modelFactory, $model)) {
             return $this->modelFactory::{$model}();
         }
 
@@ -120,9 +120,9 @@ class Stitch extends Resource
      */
     public function getSchema(): Schema
     {
-        if (isset($this->schemaFactory)) {
-            $schema = $this->schema ?? lcfirst(class_basename($this));
+        $schema = $this->schema ?? lcfirst(class_basename($this));
 
+        if (isset($this->schemaFactory) && method_exists($this->schemaFactory, $schema)) {
             return $this->schemaFactory::{$schema}();
         }
 

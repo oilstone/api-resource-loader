@@ -140,9 +140,9 @@ abstract class Resource
      */
     public function getSchema(): Schema
     {
-        if (isset($this->schemaFactory)) {
-            $schema = $this->schema ?? lcfirst(class_basename($this));
+        $schema = $this->schema ?? lcfirst(class_basename($this));
 
+        if (isset($this->schemaFactory) && method_exists($this->schemaFactory, $schema)) {
             return $this->schemaFactory::{$schema}();
         }
 
