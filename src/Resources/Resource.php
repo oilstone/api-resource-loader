@@ -10,7 +10,7 @@ use Api\Schema\Schema;
 use Api\Schema\Schema as BaseSchema;
 use Closure;
 use Illuminate\Support\Str;
-use Oilstone\ApiResourceLoader\Contracts\ResourceDecorator;
+use Oilstone\ApiResourceLoader\Decorators\ResourceDecorator;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -148,7 +148,7 @@ abstract class Resource
         }
 
         foreach ($this->decorators as $decorator) {
-            if ($decorator instanceof ResourceDecorator && method_exists($decorator, 'decorateSchema')) {
+            if ($decorator instanceof ResourceDecorator) {
                 (new $decorator)->decorateSchema($schema);
             }
         }

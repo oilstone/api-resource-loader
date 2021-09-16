@@ -7,7 +7,7 @@ use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Repositories\Stitch\Resource as StitchRepository;
 use Api\Schema\Stitch\Schema;
 use Closure;
-use Oilstone\ApiResourceLoader\Contracts\ResourceDecorator;
+use Oilstone\ApiResourceLoader\Decorators\StitchDecorator;
 use Oilstone\ApiResourceLoader\Listeners\HandleSoftDeletes;
 use Oilstone\ApiResourceLoader\Listeners\HandleTimestamps;
 use Stitch\DBAL\Schema\Table;
@@ -73,7 +73,7 @@ class Stitch extends Resource
             }
 
             foreach ($this->decorators as $decorator) {
-                if ($decorator instanceof ResourceDecorator && method_exists($decorator, 'decorateModel')) {
+                if ($decorator instanceof StitchDecorator) {
                     (new $decorator)->decorateModel($table);
                 }
             }
