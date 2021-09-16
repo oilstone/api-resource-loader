@@ -21,7 +21,7 @@ abstract class Resource
 {
     public static bool $autoload = true;
 
-    protected static string $endpoint;
+    public static string $defaultEndpoint;
 
     protected bool $asSingleton = false;
 
@@ -34,6 +34,8 @@ abstract class Resource
     protected ?ServerRequestInterface $request;
 
     protected ?Sentinel $sentinel;
+
+    protected string $endpoint;
 
     /**
      * @var string[]|array[]
@@ -89,11 +91,7 @@ abstract class Resource
      */
     public static function endpoint(): string
     {
-        if (!isset(static::$endpoint)) {
-            return Str::kebab(Str::pluralStudly(class_basename(static::class)));
-        }
-
-        return static::$endpoint;
+        return static::$defaultEndpoint ?? Str::kebab(Str::pluralStudly(class_basename(static::class)));
     }
 
     /**
@@ -612,5 +610,24 @@ abstract class Resource
         $this->decorators = $decorators;
 
         return $this;
+    }
+
+    /**
+     * @param string $endpoint
+     * @return Resource
+     */
+    public function setEndpoint(string $endpoint): Resource
+    {
+        $this->endpoint = $endpoint;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEndpoint(): string
+    {
+        return $this->endpoint ?? static::endpoint();
     }
 }
