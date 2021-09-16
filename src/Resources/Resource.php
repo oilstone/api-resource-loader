@@ -76,7 +76,7 @@ abstract class Resource
     public function __construct()
     {
         foreach ($this->decorators as $decorator) {
-            if ($decorator instanceof ResourceDecorator) {
+            if (is_subclass_of($decorator, ResourceDecorator::class)) {
                 (new $decorator)->decorate($this);
             }
         }
@@ -148,7 +148,7 @@ abstract class Resource
         }
 
         foreach ($this->decorators as $decorator) {
-            if ($decorator instanceof ResourceDecorator) {
+            if (is_subclass_of($decorator, ResourceDecorator::class)) {
                 (new $decorator)->decorateSchema($schema);
             }
         }

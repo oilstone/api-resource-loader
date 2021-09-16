@@ -73,7 +73,7 @@ class Stitch extends Resource
             }
 
             foreach ($this->decorators as $decorator) {
-                if ($decorator instanceof StitchDecorator) {
+                if (is_subclass_of($decorator, StitchDecorator::class)) {
                     (new $decorator)->decorateModel($table);
                 }
             }
