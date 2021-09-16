@@ -18,7 +18,7 @@ class HandleSoftDeletes extends Listener
     {
         $eventPayload = $event->getPayload();
 
-        if ($eventPayload->path->count() > 0) {
+        if ($eventPayload->path->isRelation()) {
             $eventPayload->query->on($eventPayload->path->to('deleted_at'), '=', null);
             return;
         }
