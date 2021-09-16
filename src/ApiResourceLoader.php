@@ -66,7 +66,7 @@ class ApiResourceLoader
         foreach (glob($path) as $resourceName) {
             $className = Str::finish($namespace, '\\') . basename($resourceName, '.php');
 
-            if (is_subclass_of($className, Resource::class)) {
+            if (is_subclass_of($className, Resource::class) && $className::$autoload) {
                 $this->api->register($className::endpoint(), function (Factory $factory) use ($sentinel, $request, $className) {
                     return (new $className())
                         ->withSchemaFactory($this->schemaFactory)

@@ -19,6 +19,8 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 abstract class Resource
 {
+    public static bool $autoload = true;
+
     protected static string $endpoint;
 
     protected bool $asSingleton = false;
@@ -101,7 +103,7 @@ abstract class Resource
     public function make(Factory $factory): ApiResource
     {
         /** @var ApiResource $resource */
-        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->makeSchema(), $this->makeRepository($this->sentinel));
+        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->makeSchema(), $this->makeRepository($this->sentinel ?? null));
 
         if ($this->only) {
             $resource->only(...$this->only);
