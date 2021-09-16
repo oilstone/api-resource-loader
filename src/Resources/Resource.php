@@ -8,7 +8,9 @@ use Api\Resources\Factory;
 use Api\Resources\Resource as ApiResource;
 use Api\Schema\Schema;
 use Api\Schema\Schema as BaseSchema;
+use Closure;
 use Illuminate\Support\Str;
+use Oilstone\ApiResourceLoader\Contracts\ResourceDecorator;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -17,48 +19,37 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 abstract class Resource
 {
-    /**
-     * @var string
-     */
     protected static string $endpoint;
 
-    /**
-     * @var bool
-     */
     protected bool $asSingleton = false;
 
-    /**
-     * @var string|null
-     */
     protected ?string $schema = null;
 
-    /**
-     * @var string|null
-     */
     protected ?string $repository = null;
 
+    protected string $schemaFactory;
+
+    protected ?ServerRequestInterface $request;
+
+    protected ?Sentinel $sentinel;
+
     /**
-     * @var string[]
+     * @var string[]|array[]
      */
     protected array $belongsTo = [];
 
     /**
-     * @var string[]
-     */
-    protected array $except = [];
-
-    /**
-     * @var string[]
+     * @var string[]|array[]
      */
     protected array $hasMany = [];
 
     /**
-     * @var string[]
+     * @var string[]|array[]
      */
     protected array $hasOne = [];
 
     /**
-     * @var string[]
+     * @var string[]|array[]
      */
     protected array $nest = [];
 
@@ -68,24 +59,28 @@ abstract class Resource
     protected array $only = [];
 
     /**
+     * @var string[]
+     */
+    protected array $except = [];
+
+    /**
      * @var array[]
      */
     protected array $listeners = [];
 
     /**
-     * @var string
+     * @var string[]
      */
-    protected string $schemaFactory;
+    protected array $decorators = [];
 
-    /**
-     * @var ServerRequestInterface|null
-     */
-    protected ?ServerRequestInterface $request;
-
-    /**
-     * @var Sentinel|null
-     */
-    protected ?Sentinel $sentinel;
+    public function __construct()
+    {
+        foreach ($this->decorators as $decorator) {
+            if ($decorator instanceof ResourceDecorator) {
+                (new $decorator)->decorate($this);
+            }
+        }
+    }
 
     /**
      * @return string
@@ -106,7 +101,7 @@ abstract class Resource
     public function make(Factory $factory): ApiResource
     {
         /** @var ApiResource $resource */
-        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->getSchema(), $this->getRepository($this->sentinel));
+        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->makeSchema(), $this->makeRepository($this->sentinel));
 
         if ($this->only) {
             $resource->only(...$this->only);
@@ -138,7 +133,7 @@ abstract class Resource
     /**
      * @return BaseSchema
      */
-    public function getSchema(): Schema
+    public function makeSchema(): Schema
     {
         $schema = $this->schema ?? lcfirst(class_basename($this));
 
@@ -152,6 +147,12 @@ abstract class Resource
             $this->schema($schema);
         }
 
+        foreach ($this->decorators as $decorator) {
+            if ($decorator instanceof ResourceDecorator && method_exists($decorator, 'decorateSchema')) {
+                (new $decorator)->decorateSchema($schema);
+            }
+        }
+
         return $schema;
     }
 
@@ -159,7 +160,7 @@ abstract class Resource
      * @param Sentinel|null $sentinel
      * @return RepositoryContract|null
      */
-    public function getRepository(?Sentinel $sentinel): ?RepositoryContract
+    public function makeRepository(?Sentinel $sentinel): ?RepositoryContract
     {
         if (isset($this->repository)) {
             $repository = new $this->repository($sentinel);
@@ -180,20 +181,26 @@ abstract class Resource
 
     /**
      * @param string $type
-     * @param string $relationName
+     * @param string|array $relation
      * @return array
      */
-    protected function getRelation(string $type, string $relationName): array
+    protected function getRelation(string $type, string|array $relation): array
     {
-        $method = $type . Str::studly($relationName);
-        $relation = [$relationName];
+        if (is_string($relation)) {
+            $relation = [$relation];
+        }
 
-        if (method_exists($this, $method)) {
-            $relation[] = $this->{$method}();
-        } else if ($type === 'belongsTo') {
-            $relation[] = function ($relation) use ($relationName) {
-                $relation->bind(Str::plural($relationName));
-            };
+        $relationName = $relation[0];
+        $method = $type . Str::studly($relationName);
+
+        if (!isset($relation[1])) {
+            if (method_exists($this, $method)) {
+                $relation[] = $this->{$method}();
+            } else if ($type === 'belongsTo') {
+                $relation[] = function ($relation) use ($relationName) {
+                    $relation->bind(Str::plural($relationName));
+                };
+            }
         }
 
         return $relation;
@@ -205,9 +212,7 @@ abstract class Resource
      */
     public function withSchemaFactory(string $schemaFactory): self
     {
-        $this->schemaFactory = $schemaFactory;
-
-        return $this;
+        return $this->setSchemaFactory($schemaFactory);
     }
 
     /**
@@ -216,9 +221,7 @@ abstract class Resource
      */
     public function withRequest(?ServerRequestInterface $request): self
     {
-        $this->request = $request;
-
-        return $this;
+        return $this->setRequest($request);
     }
 
     /**
@@ -227,7 +230,384 @@ abstract class Resource
      */
     public function withSentinel(?Sentinel $sentinel): self
     {
+        return $this->setSentinel($sentinel);
+    }
+
+    /**
+     * @return bool
+     */
+    public function getAsSingleton(): bool
+    {
+        return $this->asSingleton;
+    }
+
+    /**
+     * @param bool $asSingleton
+     * @return Resource
+     */
+    public function setAsSingleton(bool $asSingleton): Resource
+    {
+        $this->asSingleton = $asSingleton;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getSchema(): ?string
+    {
+        return $this->schema;
+    }
+
+    /**
+     * @param string|null $schema
+     * @return Resource
+     */
+    public function setSchema(?string $schema): Resource
+    {
+        $this->schema = $schema;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getRepository(): ?string
+    {
+        return $this->repository;
+    }
+
+    /**
+     * @param string|null $repository
+     * @return Resource
+     */
+    public function setRepository(?string $repository): Resource
+    {
+        $this->repository = $repository;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSchemaFactory(): string
+    {
+        return $this->schemaFactory;
+    }
+
+    /**
+     * @param string $schemaFactory
+     * @return Resource
+     */
+    public function setSchemaFactory(string $schemaFactory): Resource
+    {
+        $this->schemaFactory = $schemaFactory;
+
+        return $this;
+    }
+
+    /**
+     * @return ServerRequestInterface|null
+     */
+    public function getRequest(): ?ServerRequestInterface
+    {
+        return $this->request;
+    }
+
+    /**
+     * @param ServerRequestInterface|null $request
+     * @return Resource
+     */
+    public function setRequest(?ServerRequestInterface $request): Resource
+    {
+        $this->request = $request;
+
+        return $this;
+    }
+
+    /**
+     * @return Sentinel|null
+     */
+    public function getSentinel(): ?Sentinel
+    {
+        return $this->sentinel;
+    }
+
+    /**
+     * @param Sentinel|null $sentinel
+     * @return Resource
+     */
+    public function setSentinel(?Sentinel $sentinel): Resource
+    {
         $this->sentinel = $sentinel;
+
+        return $this;
+    }
+
+    /**
+     * @param string $belongsTo
+     * @param Closure|null $closure
+     * @return Resource
+     */
+    public function addBelongsTo(string $belongsTo, ?Closure $closure = null): Resource
+    {
+        if (isset($closure)) {
+            $belongsTo = [$belongsTo, $closure];
+        }
+
+        $this->belongsTo[] = $belongsTo;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getBelongsTo(): array
+    {
+        return $this->belongsTo;
+    }
+
+    /**
+     * @param string[]|array[] $belongsTo
+     * @return Resource
+     */
+    public function setBelongsTo(array $belongsTo): Resource
+    {
+        $this->belongsTo = $belongsTo;
+
+        return $this;
+    }
+
+    /**
+     * @param string $hasMany
+     * @param Closure|null $closure
+     * @return Resource
+     */
+    public function addHasMany(string $hasMany, ?Closure $closure = null): Resource
+    {
+        if (isset($closure)) {
+            $hasMany = [$hasMany, $closure];
+        }
+
+        $this->hasMany[] = $hasMany;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getHasMany(): array
+    {
+        return $this->hasMany;
+    }
+
+    /**
+     * @param string[] $hasMany
+     * @return Resource
+     */
+    public function setHasMany(array $hasMany): Resource
+    {
+        $this->hasMany = $hasMany;
+
+        return $this;
+    }
+
+    /**
+     * @param string $hasOne
+     * @param Closure|null $closure
+     * @return Resource
+     */
+    public function addHasOne(string $hasOne, ?Closure $closure = null): Resource
+    {
+        if (isset($closure)) {
+            $hasOne = [$hasOne, $closure];
+        }
+
+        $this->hasOne[] = $hasOne;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getHasOne(): array
+    {
+        return $this->hasOne;
+    }
+
+    /**
+     * @param string[]|array[] $hasOne
+     * @return Resource
+     */
+    public function setHasOne(array $hasOne): Resource
+    {
+        $this->hasOne = $hasOne;
+
+        return $this;
+    }
+
+    /**
+     * @param string $nest
+     * @param Closure|null $closure
+     * @return Resource
+     */
+    public function addNest(string $nest, ?Closure $closure = null): Resource
+    {
+        if (isset($closure)) {
+            $nest = [$nest, $closure];
+        }
+
+        $this->nest[] = $nest;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getNest(): array
+    {
+        return $this->nest;
+    }
+
+    /**
+     * @param string[]|array[] $nest
+     * @return Resource
+     */
+    public function setNest(array $nest): Resource
+    {
+        $this->nest = $nest;
+
+        return $this;
+    }
+
+    /**
+     * @param string $only
+     * @return Resource
+     */
+    public function addOnly(string $only): Resource
+    {
+        $this->only[] = $only;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getOnly(): array
+    {
+        return $this->only;
+    }
+
+    /**
+     * @param string[] $only
+     * @return Resource
+     */
+    public function setOnly(array $only): Resource
+    {
+        $this->only = $only;
+
+        return $this;
+    }
+
+    /**
+     * @param string $except
+     * @return Resource
+     */
+    public function addExcept(string $except): Resource
+    {
+        $this->except[] = $except;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getExcept(): array
+    {
+        return $this->except;
+    }
+
+    /**
+     * @param string[] $except
+     * @return Resource
+     */
+    public function setExcept(array $except): Resource
+    {
+        $this->except = $except;
+
+        return $this;
+    }
+
+    /**
+     * @param string $event
+     * @param string $listener
+     * @return Resource
+     */
+    public function addListener(string $event, string $listener): Resource
+    {
+        if (!isset($this->listeners[$event])) {
+            $this->listeners[$event] = [];
+        }
+
+        $this->listeners[$event][] = $listener;
+
+        return $this;
+    }
+
+    /**
+     * @return array[]
+     */
+    public function getListeners(): array
+    {
+        return $this->listeners;
+    }
+
+    /**
+     * @param array[] $listeners
+     * @return Resource
+     */
+    public function setListeners(array $listeners): Resource
+    {
+        $this->listeners = $listeners;
+
+        return $this;
+    }
+
+    /**
+     * @param string $decorator
+     * @return Resource
+     */
+    public function addDecorator(string $decorator): Resource
+    {
+        $this->decorators[] = $decorator;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getDecorators(): array
+    {
+        return $this->decorators;
+    }
+
+    /**
+     * @param string[] $decorators
+     * @return Resource
+     */
+    public function setDecorators(array $decorators): Resource
+    {
+        $this->decorators = $decorators;
 
         return $this;
     }

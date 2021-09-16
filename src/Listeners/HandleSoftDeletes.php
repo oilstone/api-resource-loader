@@ -16,6 +16,10 @@ class HandleSoftDeletes extends Listener
      */
     public function fetching(Event $event): void
     {
+        if ($event->getPayload()->path->count() > 0) {
+            return; // Don't apply the scope to relations
+        }
+
         $event->getPayload()->query->where('deleted_at', '=', null);
     }
 
