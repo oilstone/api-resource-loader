@@ -7,6 +7,7 @@ use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Repositories\Stitch\Resource as StitchRepository;
 use Api\Schema\Stitch\Schema;
 use Closure;
+use Oilstone\ApiResourceLoader\Decorators\ResourceDecorator;
 use Oilstone\ApiResourceLoader\Decorators\StitchDecorator;
 use Oilstone\ApiResourceLoader\Listeners\HandleSoftDeletes;
 use Oilstone\ApiResourceLoader\Listeners\HandleTimestamps;
@@ -127,6 +128,12 @@ class Stitch extends Resource
 
         if (method_exists($this, 'schema')) {
             $this->schema($schema);
+        }
+
+        foreach ($this->decorators as $decorator) {
+            if (is_subclass_of($decorator, ResourceDecorator::class)) {
+                (new $decorator)->decorateSchema($schema);
+            }
         }
 
         return $schema;
