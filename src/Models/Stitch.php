@@ -36,9 +36,9 @@ class Stitch extends Model
 
     /**
      * @param Closure $callback
-     * @return Model
+     * @return Stitch
      */
-    public static function make(Closure $callback)
+    public static function make(Closure $callback): self
     {
         $table = new Table();
 

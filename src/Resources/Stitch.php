@@ -7,7 +7,6 @@ use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Repositories\Stitch\Resource as StitchRepository;
 use Api\Schema\Stitch\Schema;
 use Closure;
-use Oilstone\ApiResourceLoader\Decorators\ResourceDecorator;
 use Oilstone\ApiResourceLoader\Decorators\StitchDecorator;
 use Oilstone\ApiResourceLoader\Listeners\HandleSoftDeletes;
 use Oilstone\ApiResourceLoader\Listeners\HandleTimestamps;
@@ -77,7 +76,7 @@ class Stitch extends Resource
                     (new $decorator)->decorateModel($table);
                 }
             }
-        });
+        })->setResource($this);
 
         if ($withListeners) {
             if ($this->usesTimestamps()) {
