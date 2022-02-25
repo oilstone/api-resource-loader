@@ -11,6 +11,7 @@ use Oilstone\ApiResourceLoader\Decorators\ResourceDecorator;
 use Oilstone\ApiResourceLoader\Decorators\StitchDecorator;
 use Oilstone\ApiResourceLoader\Listeners\HandleSoftDeletes;
 use Oilstone\ApiResourceLoader\Listeners\HandleTimestamps;
+use Oilstone\ApiResourceLoader\Models\Stitch as StitchModel;
 use Stitch\DBAL\Schema\Table;
 use Stitch\Model;
 
@@ -60,10 +61,8 @@ class Stitch extends Resource
             return $this->modelFactory::{$model}();
         }
 
-        $model = \Stitch\Stitch::make(function (Table $table) {
-            if (method_exists($this, 'model')) {
-                $this->model($table);
-            }
+        $model = StitchModel::make(function (Table $table) {
+            $this->model($table);
 
             if ($this->usesTimestamps()) {
                 $table->timestamps();
@@ -98,6 +97,15 @@ class Stitch extends Resource
     }
 
     /**
+     * @param Table $table
+     * @return void
+     */
+    protected function model(Table $table): void
+    {
+        //
+    }
+
+    /**
      * @return bool
      */
     public function usesTimestamps(): bool
@@ -111,32 +119,6 @@ class Stitch extends Resource
     public function usesSoftDeletes(): bool
     {
         return $this->getSoftDeletes();
-    }
-
-    /**
-     * @return Schema
-     */
-    public function makeSchema(): Schema
-    {
-        $schema = $this->schema ?? lcfirst(class_basename($this));
-
-        if (isset($this->schemaFactory) && method_exists($this->schemaFactory, $schema)) {
-            return $this->schemaFactory::{$schema}();
-        }
-
-        $schema = new Schema($this->makeModel()->getTable());
-
-        if (method_exists($this, 'schema')) {
-            $this->schema($schema);
-        }
-
-        foreach ($this->decorators as $decorator) {
-            if (is_subclass_of($decorator, ResourceDecorator::class)) {
-                (new $decorator)->decorateSchema($schema);
-            }
-        }
-
-        return $schema;
     }
 
     /**
@@ -243,5 +225,13 @@ class Stitch extends Resource
     public function getModelListeners(): array
     {
         return $this->modelListeners;
+    }
+
+    /**
+     * @return Schema
+     */
+    protected function newSchemaObject(): Schema
+    {
+        return new Schema($this->makeModel()->getTable());
     }
 }

@@ -141,11 +141,9 @@ abstract class Resource
             return $this->schemaFactory::{$schema}();
         }
 
-        $schema = new Schema();
+        $schema = $this->newSchemaObject();
 
-        if (method_exists($this, 'schema')) {
-            $this->schema($schema);
-        }
+        $this->schema($schema);
 
         foreach ($this->decorators as $decorator) {
             if (is_subclass_of($decorator, ResourceDecorator::class)) {
@@ -157,13 +155,23 @@ abstract class Resource
     }
 
     /**
+     * @param Schema $schema
+     * @return void
+     */
+    protected function schema(Schema $schema): void
+    {
+        //
+    }
+
+    /**
      * @param Sentinel|null $sentinel
      * @return RepositoryContract|null
      */
     public function makeRepository(?Sentinel $sentinel): ?RepositoryContract
     {
         if (isset($this->repository)) {
-            $repository = new $this->repository($sentinel);
+            $repository = $this->repository;
+            $repository = new $repository($sentinel);
 
             if (method_exists($repository, 'setSentinel')) {
                 $repository->setSentinel($sentinel);
@@ -172,10 +180,15 @@ abstract class Resource
             return $repository;
         }
 
-        if (method_exists($this, 'repository')) {
-            return $this->repository($sentinel);
-        }
+        return $this->repository($sentinel);
+    }
 
+    /**
+     * @param null|Sentinel $sentinel
+     * @return null|RepositoryContract
+     */
+    protected function repository(?Sentinel $sentinel): ?RepositoryContract
+    {
         return null;
     }
 
@@ -629,5 +642,13 @@ abstract class Resource
     public function getEndpoint(): string
     {
         return $this->endpoint ?? static::endpoint();
+    }
+
+    /**
+     * @return Schema
+     */
+    protected function newSchemaObject(): Schema
+    {
+        return new Schema();
     }
 }
