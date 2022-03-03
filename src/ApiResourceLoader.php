@@ -65,15 +65,21 @@ class ApiResourceLoader
 
         foreach (glob($path) as $resourceName) {
             $className = Str::finish($namespace, '\\') . basename($resourceName, '.php');
+            $resourceName = basename($resourceName, '.php') . 'Resource';
 
-            if (is_subclass_of($className, Resource::class) && $className::$autoload) {
-                $this->api->register($className::endpoint(), function (Factory $factory) use ($sentinel, $request, $className) {
+            if (is_subclass_of($className, Resource::class)) {
+                app()->singleton($resourceName, function () use ($sentinel, $request, $className) {
                     return (new $className())
                         ->withSchemaFactory($this->schemaFactory)
                         ->withRequest($request)
-                        ->withSentinel($sentinel)
-                        ->make($factory);
+                        ->withSentinel($sentinel);
                 });
+
+                if ($className::$autoload) {
+                    $this->api->register($className::endpoint(), function (Factory $factory) use ($resourceName) {
+                        return app($resourceName)->make($factory);
+                    });
+                }
             }
         }
 
