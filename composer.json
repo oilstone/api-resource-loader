@@ -12,7 +12,8 @@
     "require": {
         "php": ">=8.0",
         "garethhudson07/api": "^6.0",
-        "illuminate/support": "^8.0|^9.0"
+        "illuminate/support": "^8.0|^9.0",
+        "illuminate/container": "^8.0|^9.0"
     },
     "autoload": {
         "psr-4": {

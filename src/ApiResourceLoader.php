@@ -71,8 +71,8 @@ class ApiResourceLoader
                 app()->singleton($resourceName, function () use ($sentinel, $request, $className) {
                     return (new $className())
                         ->withSchemaFactory($this->schemaFactory)
-                        ->withRequest($request)
-                        ->withSentinel($sentinel);
+                        ->withRequest($request ?: null)
+                        ->withSentinel($sentinel ?: null);
                 });
 
                 if ($className::$autoload) {
