@@ -171,7 +171,7 @@ abstract class Resource
     {
         if (isset($this->repository)) {
             $repository = $this->repository;
-            $repository = new $repository($sentinel);
+            $repository = new $repository();
 
             if (method_exists($repository, 'setSentinel')) {
                 $repository->setSentinel($sentinel);
