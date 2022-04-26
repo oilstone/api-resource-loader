@@ -4,13 +4,14 @@ namespace Oilstone\ApiResourceLoader\Resources;
 
 use Api\Guards\OAuth2\Sentinel;
 use Api\Repositories\Contracts\Resource as RepositoryContract;
+use Api\Transformers\Contracts\Transformer as TransformerContract;
 use Api\Resources\Factory;
 use Api\Resources\Resource as ApiResource;
-use Api\Schema\Schema;
 use Api\Schema\Schema as BaseSchema;
 use Closure;
 use Illuminate\Support\Str;
 use Oilstone\ApiResourceLoader\Decorators\ResourceDecorator;
+use Oilstone\ApiResourceLoader\Transformers\Transformer;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -100,8 +101,8 @@ abstract class Resource
      */
     public function make(Factory $factory): ApiResource
     {
-        /** @var ApiResource $resource */
-        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($this->makeSchema(), $this->makeRepository($this->sentinel ?? null));
+        $schema = $this->makeSchema();
+        $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($schema, $this->makeRepository($this->sentinel ?? null), $this->makeTransformer($schema));
 
         if ($this->only) {
             $resource->only(...$this->only);
@@ -133,7 +134,7 @@ abstract class Resource
     /**
      * @return BaseSchema
      */
-    public function makeSchema(): Schema
+    public function makeSchema(): BaseSchema
     {
         $schema = $this->schema ?? lcfirst(class_basename($this));
 
@@ -155,10 +156,10 @@ abstract class Resource
     }
 
     /**
-     * @param Schema $schema
+     * @param BaseSchema $schema
      * @return void
      */
-    protected function schema(Schema $schema): void
+    protected function schema(BaseSchema $schema): void
     {
         //
     }
@@ -190,6 +191,30 @@ abstract class Resource
     protected function repository(?Sentinel $sentinel): ?RepositoryContract
     {
         return null;
+    }
+
+    /**
+     * @param BaseSchema $schema
+     * @return TransformerContract
+     */
+    public function makeTransformer(BaseSchema $schema): ?TransformerContract
+    {
+        if (isset($this->transformer)) {
+            $transformer = $this->transformer;
+
+            return new $transformer($schema);
+        }
+
+        return $this->transformer($schema);
+    }
+
+    /**
+     * @param BaseSchema $schema
+     * @return TransformerContract
+     */
+    protected function transformer(BaseSchema $schema): ?TransformerContract
+    {
+        return new Transformer($schema);
     }
 
     /**
@@ -226,6 +251,15 @@ abstract class Resource
     public function withSchemaFactory(string $schemaFactory): self
     {
         return $this->setSchemaFactory($schemaFactory);
+    }
+
+    /**
+     * @param string $modelFactory
+     * @return $this
+     */
+    public function withModelFactory(string $modelFactory): self
+    {
+        return $this->setModelFactory($modelFactory);
     }
 
     /**
@@ -318,6 +352,25 @@ abstract class Resource
     public function setSchemaFactory(string $schemaFactory): Resource
     {
         $this->schemaFactory = $schemaFactory;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getModelFactory(): string
+    {
+        return $this->modelFactory;
+    }
+
+    /**
+     * @param string $modelFactory
+     * @return Resource
+     */
+    public function setModelFactory(string $modelFactory): Resource
+    {
+        $this->modelFactory = $modelFactory;
 
         return $this;
     }
@@ -645,10 +698,10 @@ abstract class Resource
     }
 
     /**
-     * @return Schema
+     * @return BaseSchema
      */
-    protected function newSchemaObject(): Schema
+    protected function newSchemaObject(): BaseSchema
     {
-        return new Schema();
+        return new BaseSchema();
     }
 }

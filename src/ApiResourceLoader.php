@@ -24,6 +24,11 @@ class ApiResourceLoader
     protected string $schemaFactory = '';
 
     /**
+     * @var string
+     */
+    protected string $modelFactory = '';
+
+    /**
      * @return ApiResourceLoader
      */
     public static function make(): ApiResourceLoader
@@ -54,6 +59,17 @@ class ApiResourceLoader
     }
 
     /**
+     * @param string $modelFactory
+     * @return $this
+     */
+    public function modelFactory(string $modelFactory): self
+    {
+        $this->modelFactory = $modelFactory;
+
+        return $this;
+    }
+
+    /**
      * @param string $path
      * @param string $namespace
      * @return $this
@@ -71,6 +87,7 @@ class ApiResourceLoader
                 app()->singleton($resourceName, function () use ($sentinel, $request, $className) {
                     return (new $className())
                         ->withSchemaFactory($this->schemaFactory)
+                        ->withModelFactory($this->modelFactory)
                         ->withRequest($request ?: null)
                         ->withSentinel($sentinel ?: null);
                 });

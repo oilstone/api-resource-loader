@@ -5,7 +5,10 @@ namespace Oilstone\ApiResourceLoader\Resources;
 use Api\Guards\OAuth2\Sentinel;
 use Api\Repositories\Contracts\Resource as RepositoryContract;
 use Api\Repositories\Stitch\Resource as StitchRepository;
+use Api\Schema\Schema as BaseSchema;
 use Api\Schema\Stitch\Schema;
+use Api\Transformers\Contracts\Transformer as TransformerContract;
+use Api\Transformers\Stitch\Transformer;
 use Closure;
 use Oilstone\ApiResourceLoader\Decorators\StitchDecorator;
 use Oilstone\ApiResourceLoader\Listeners\HandleSoftDeletes;
@@ -16,8 +19,6 @@ use Stitch\Model;
 
 class Stitch extends Resource
 {
-    protected string $modelFactory;
-
     protected ?string $model = null;
 
     protected bool $timestamps = true;
@@ -28,15 +29,6 @@ class Stitch extends Resource
      * @var string[]|Closure[]
      */
     protected array $modelListeners = [];
-
-    /**
-     * @param string $modelFactory
-     * @return $this
-     */
-    public function withModelFactory(string $modelFactory): self
-    {
-        return $this->setModelFactory($modelFactory);
-    }
 
     /**
      * @param Sentinel|null $sentinel
@@ -105,6 +97,15 @@ class Stitch extends Resource
     }
 
     /**
+     * @param BaseSchema $schema
+     * @return TransformerContract
+     */
+    protected function transformer(BaseSchema $schema): ?TransformerContract
+    {
+        return new Transformer($schema);
+    }
+
+    /**
      * @return bool
      */
     public function usesTimestamps(): bool
@@ -118,25 +119,6 @@ class Stitch extends Resource
     public function usesSoftDeletes(): bool
     {
         return $this->getSoftDeletes();
-    }
-
-    /**
-     * @param string $modelFactory
-     * @return Stitch
-     */
-    public function setModelFactory(string $modelFactory): Stitch
-    {
-        $this->modelFactory = $modelFactory;
-
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getModelFactory(): string
-    {
-        return $this->modelFactory;
     }
 
     /**
@@ -231,6 +213,6 @@ class Stitch extends Resource
      */
     protected function newSchemaObject(): Schema
     {
-        return new Schema($this->makeModel()->getTable());
+        return new Schema();
     }
 }
