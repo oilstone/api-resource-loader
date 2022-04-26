@@ -61,7 +61,11 @@ class Stitch extends Resource
         $model = $this->model ?? lcfirst(class_basename($this));
 
         if (isset($this->modelFactory) && method_exists($this->modelFactory, $model)) {
-            return $this->modelFactory::{$model}();
+            $model = $this->modelFactory::{$model}();
+
+            $this->cached['model'] = $model;
+
+            return $model;
         }
 
         $schema = $this->makeSchema();

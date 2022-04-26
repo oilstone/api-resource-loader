@@ -154,7 +154,11 @@ abstract class Resource
         $schema = $this->schema ?? lcfirst(class_basename($this));
 
         if (isset($this->schemaFactory) && method_exists($this->schemaFactory, $schema)) {
-            return $this->schemaFactory::{$schema}();
+            $schema = $this->schemaFactory::{$schema}();
+
+            $this->cached['schema'] = $schema;
+
+            return $schema;
         }
 
         $schema = $this->newSchemaObject();
@@ -199,6 +203,8 @@ abstract class Resource
                 $repository->setSentinel($sentinel);
             }
 
+            $this->cached['repository'] = $repository;
+
             return $repository;
         }
 
@@ -230,6 +236,8 @@ abstract class Resource
 
         if (isset($this->transformer)) {
             $transformer = $this->transformer;
+
+            $this->cached['transformer'] = $transformer;
 
             return new $transformer($schema);
         }
