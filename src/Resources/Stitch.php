@@ -36,7 +36,15 @@ class Stitch extends Resource
      */
     public function makeRepository(?Sentinel $sentinel): ?RepositoryContract
     {
-        return parent::makeRepository($sentinel) ?? new StitchRepository($this->makeModel());
+        if (isset($this->cached['repository'])) {
+            return $this->cached['repository'];
+        }
+
+        $repository = parent::makeRepository($sentinel) ?? new StitchRepository($this->makeModel());
+
+        $this->cached['repository'] = $repository;
+
+        return $repository;
     }
 
     /**
@@ -46,43 +54,52 @@ class Stitch extends Resource
      */
     public function makeModel(bool $withListeners = true): Model
     {
+        if (isset($this->cached['model'])) {
+            return $this->cached['model'];
+        }
+
         $model = $this->model ?? lcfirst(class_basename($this));
 
         if (isset($this->modelFactory) && method_exists($this->modelFactory, $model)) {
             return $this->modelFactory::{$model}();
         }
 
-        $model = StitchModel::make(function (Table $table) {
-            $this->model($table);
+        $schema = $this->makeSchema();
+        $table = $schema->getTable();
 
-            if ($this->usesTimestamps()) {
-                $table->timestamps();
-            }
+        if ($this->usesTimestamps()) {
+            $table->timestamps();
+        }
 
-            if ($this->usesSoftDeletes()) {
-                $table->timestamp('deleted_at');
-            }
+        if ($this->usesSoftDeletes()) {
+            $table->timestamp('deleted_at');
+        }
 
-            foreach ($this->decorators as $decorator) {
-                if (is_subclass_of($decorator, StitchDecorator::class)) {
-                    (new $decorator)->decorateModel($table);
-                }
+        foreach ($this->decorators as $decorator) {
+            if (is_subclass_of($decorator, StitchDecorator::class)) {
+                (new $decorator)->decorateModel($table);
             }
-        })->setResource($this);
+        }
+
+        $this->model($table);
+
+        $model = StitchModel::make($table)->setResource($this);
 
         if ($withListeners) {
             if ($this->usesTimestamps()) {
-                $model->listen(fn() => new HandleTimestamps());
+                $model->listen(fn () => new HandleTimestamps());
             }
 
             if ($this->usesSoftDeletes()) {
-                $model->listen(fn() => new HandleSoftDeletes());
+                $model->listen(fn () => new HandleSoftDeletes());
             }
 
             foreach ($this->modelListeners as $modelListener) {
-                $model->listen(is_string($modelListener) ? fn() => new $modelListener() : $modelListener);
+                $model->listen(is_string($modelListener) ? fn () => new $modelListener() : $modelListener);
             }
         }
+
+        $this->cached['model'] = $model;
 
         return $model;
     }
@@ -97,7 +114,7 @@ class Stitch extends Resource
     }
 
     /**
-     * @param BaseSchema $schema
+     * @param Schema $schema
      * @return TransformerContract
      */
     protected function transformer(BaseSchema $schema): ?TransformerContract

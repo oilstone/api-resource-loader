@@ -78,6 +78,11 @@ abstract class Resource
      */
     protected array $decorators = [];
 
+    /**
+     * @var array
+     */
+    protected array $cached = [];
+
     public function __construct()
     {
         foreach ($this->decorators as $decorator) {
@@ -101,6 +106,10 @@ abstract class Resource
      */
     public function make(Factory $factory): ApiResource
     {
+        if (isset($this->cached['resource'])) {
+            return $this->cached['resource'];
+        }
+
         $schema = $this->makeSchema();
         $resource = $factory->{$this->asSingleton ? 'singleton' : 'collectable'}($schema, $this->makeRepository($this->sentinel ?? null), $this->makeTransformer($schema));
 
@@ -128,6 +137,8 @@ abstract class Resource
             }
         }
 
+        $this->cached['resource'] = $resource;
+
         return $resource;
     }
 
@@ -136,6 +147,10 @@ abstract class Resource
      */
     public function makeSchema(): BaseSchema
     {
+        if (isset($this->cached['schema'])) {
+            return $this->cached['schema'];
+        }
+
         $schema = $this->schema ?? lcfirst(class_basename($this));
 
         if (isset($this->schemaFactory) && method_exists($this->schemaFactory, $schema)) {
@@ -151,6 +166,8 @@ abstract class Resource
                 (new $decorator)->decorateSchema($schema);
             }
         }
+
+        $this->cached['schema'] = $schema;
 
         return $schema;
     }
@@ -170,6 +187,10 @@ abstract class Resource
      */
     public function makeRepository(?Sentinel $sentinel): ?RepositoryContract
     {
+        if (isset($this->cached['repository'])) {
+            return $this->cached['repository'];
+        }
+
         if (isset($this->repository)) {
             $repository = $this->repository;
             $repository = new $repository();
@@ -181,7 +202,11 @@ abstract class Resource
             return $repository;
         }
 
-        return $this->repository($sentinel);
+        $repository = $this->repository($sentinel);
+
+        $this->cached['repository'] = $repository;
+
+        return $repository;
     }
 
     /**
@@ -199,13 +224,21 @@ abstract class Resource
      */
     public function makeTransformer(BaseSchema $schema): ?TransformerContract
     {
+        if (isset($this->cached['transformer'])) {
+            return $this->cached['transformer'];
+        }
+
         if (isset($this->transformer)) {
             $transformer = $this->transformer;
 
             return new $transformer($schema);
         }
 
-        return $this->transformer($schema);
+        $transformer = $this->transformer($schema);
+
+        $this->cached['transformer'] = $transformer;
+
+        return $transformer;
     }
 
     /**
