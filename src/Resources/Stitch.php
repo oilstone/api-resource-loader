@@ -34,7 +34,7 @@ class Stitch extends Resource
      * @param Sentinel|null $sentinel
      * @return RepositoryContract|null
      */
-    public function makeRepository(?Sentinel $sentinel): ?RepositoryContract
+    public function makeRepository(?Sentinel $sentinel = null): ?RepositoryContract
     {
         if (isset($this->cached['repository'])) {
             return $this->cached['repository'];
