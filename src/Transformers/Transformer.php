@@ -22,4 +22,13 @@ class Transformer implements Contract
     {
         return $record->getAttributes();
     }
+
+    /**
+     * @param Record $record
+     * @return array
+     */
+    public function transformMetaData(Record $record): array
+    {
+        return [];
+    }
 }
