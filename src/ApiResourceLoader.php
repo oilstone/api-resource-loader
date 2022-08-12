@@ -4,6 +4,9 @@ namespace Oilstone\ApiResourceLoader;
 
 use Api\Api;
 use Api\Resources\Factory;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 use Oilstone\ApiResourceLoader\Resources\Resource;
 
@@ -74,7 +77,7 @@ class ApiResourceLoader
      * @param string $namespace
      * @return $this
      */
-    public function loadResourcesFromPath(string $path, string $namespace): self
+    public function loadResourcesFromPath(Application $app, string $path, string $namespace): self
     {
         $request = $this->api->getKernel()->resolve('request.instance');
         $sentinel = $this->api->getKernel()->resolve('guard.sentinel');
@@ -84,7 +87,7 @@ class ApiResourceLoader
             $resourceName = basename($resourceName, '.php') . 'Resource';
 
             if (is_subclass_of($className, Resource::class)) {
-                app()->singleton($resourceName, function () use ($sentinel, $request, $className) {
+                $app->singleton($resourceName, function () use ($sentinel, $request, $className) {
                     return (new $className())
                         ->withSchemaFactory($this->schemaFactory)
                         ->withModelFactory($this->modelFactory)
@@ -92,9 +95,11 @@ class ApiResourceLoader
                         ->withSentinel($sentinel ?: null);
                 });
 
+                $app->alias($resourceName, 'resources.' . $className::endpoint());
+
                 if ($className::$autoload) {
                     $this->api->register($className::endpoint(), function (Factory $factory) use ($resourceName) {
-                        return app($resourceName)->make($factory);
+                        return App::make($resourceName)->make($factory);
                     });
                 }
             }
