@@ -8,10 +8,10 @@ use Api\Transformers\Contracts\Transformer as TransformerContract;
 use Api\Resources\Factory;
 use Api\Resources\Resource as ApiResource;
 use Api\Schema\Schema as BaseSchema;
+use Api\Transformers\Transformer;
 use Closure;
 use Illuminate\Support\Str;
 use Oilstone\ApiResourceLoader\Decorators\ResourceDecorator;
-use Oilstone\ApiResourceLoader\Transformers\Transformer;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
