@@ -269,17 +269,31 @@ abstract class Resource
             $relation = [$relation];
         }
 
+        if (isset($relation[1])) {
+            return $relation;
+        }
+
         $relationName = $relation[0];
         $method = $type . Str::studly($relationName);
 
-        if (!isset($relation[1])) {
-            if (method_exists($this, $method)) {
-                $relation[] = $this->{$method}();
-            } else if ($type === 'belongsTo') {
-                $relation[] = function ($relation) use ($relationName) {
-                    $relation->bind(Str::plural($relationName));
-                };
-            }
+        if (method_exists($this, $method)) {
+            $relation[] = $this->{$method}();
+
+            return $relation;
+        }
+
+        if ($type === 'belongsTo') {
+            $relation[] = function ($relation) use ($relationName) {
+                $relation->bind(Str::plural($relationName));
+            };
+
+            return $relation;
+        }
+
+        if ($type === 'nest') {
+            $relation[] = function ($relation) use ($relationName) {
+                $relation->bind($relationName)->localKey('id')->foreignKey(Str::snake(Str::camel(Str::singular($this->getEndpoint()) . '_id')));
+            };
         }
 
         return $relation;
