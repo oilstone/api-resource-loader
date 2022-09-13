@@ -16,9 +16,15 @@ class HandleTimestamps extends Listener
      */
     public function creating(Event $event): void
     {
-        $event->getPayload()->record
-            ->setAttribute('created_at', Carbon::now()->toDateTimeString())
-            ->setAttribute('updated_at', Carbon::now()->toDateTimeString());
+        $record = $event->getPayload()->get('record');
+
+        if (!$record->created_at) {
+            $record->setAttribute('created_at', Carbon::now()->toDateTimeString());
+        }
+
+        if (!$record->updated_at) {
+            $record->setAttribute('updated_at', Carbon::now()->toDateTimeString());
+        }
     }
 
     /**
