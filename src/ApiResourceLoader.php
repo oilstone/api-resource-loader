@@ -4,7 +4,6 @@ namespace Oilstone\ApiResourceLoader;
 
 use Api\Api;
 use Api\Resources\Factory;
-use Illuminate\Container\Container;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
@@ -30,6 +29,11 @@ class ApiResourceLoader
      * @var string
      */
     protected string $modelFactory = '';
+
+    /**
+     * @var array
+     */
+    protected array $listeners = [];
 
     /**
      * @return ApiResourceLoader
@@ -73,6 +77,17 @@ class ApiResourceLoader
     }
 
     /**
+     * @param string $modelFactory
+     * @return $this
+     */
+    public function listeners(array $listeners): self
+    {
+        $this->listeners = $listeners;
+
+        return $this;
+    }
+
+    /**
      * @param string $path
      * @param string $namespace
      * @return $this
@@ -91,6 +106,7 @@ class ApiResourceLoader
                     return (new $className())
                         ->withSchemaFactory($this->schemaFactory)
                         ->withModelFactory($this->modelFactory)
+                        ->withListeners($this->listeners)
                         ->withRequest($request ?: null)
                         ->withSentinel($sentinel ?: null);
                 });

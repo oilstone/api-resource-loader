@@ -318,6 +318,21 @@ abstract class Resource
     }
 
     /**
+     * @param array $listeners
+     * @return $this
+     */
+    public function withListeners(array $listeners): self
+    {
+        foreach ($listeners as $event => $eventListeners) {
+            foreach ($eventListeners as $listener) {
+                $this->addListener($event, $listener);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * @param ServerRequestInterface|null $request
      * @return $this
      */
