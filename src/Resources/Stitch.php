@@ -72,10 +72,13 @@ class Stitch extends Resource
         $table = $schema->getTable();
 
         if ($this->usesTimestamps()) {
+            $schema->timestamp('createdAt')->column('created_at')->sometimes()->nullable();
+            $schema->timestamp('updatedAt')->column('updated_at')->sometimes()->nullable();
             $table->timestamps();
         }
 
         if ($this->usesSoftDeletes()) {
+            $schema->timestamp('deletedAt')->column('deleted_at')->sometimes()->nullable();
             $table->timestamp('deleted_at');
         }
 
