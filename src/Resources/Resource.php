@@ -189,15 +189,15 @@ abstract class Resource
      * @param Sentinel|null $sentinel
      * @return RepositoryContract|null
      */
-    public function makeRepository(?Sentinel $sentinel = null): ?RepositoryContract
+    public function makeRepository(?Sentinel $sentinel = null, ...$params): ?RepositoryContract
     {
         if (isset($this->cached['repository'])) {
             return $this->cached['repository'];
         }
 
         if (isset($this->repository)) {
-            $repository = $this->repository;
-            $repository = new $repository();
+            $repositoryClass = $this->repository;
+            $repository = new $repositoryClass(...$params);
 
             if (method_exists($repository, 'setSentinel')) {
                 $repository->setSentinel($sentinel);
@@ -208,7 +208,7 @@ abstract class Resource
             return $repository;
         }
 
-        $repository = $this->repository($sentinel);
+        $repository = $this->repository($sentinel, ...$params);
 
         $this->cached['repository'] = $repository;
 
