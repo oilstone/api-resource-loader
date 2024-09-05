@@ -282,7 +282,7 @@ abstract class Resource
             return $relation;
         }
 
-        if ($type === 'belongsTo') {
+        if ($type === 'belongsTo' || $type === 'hasOne') {
             $relation[] = function ($relation) use ($relationName) {
                 $relation->bind(Str::plural($relationName));
             };
