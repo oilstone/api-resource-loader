@@ -37,5 +37,7 @@ class HandleSoftDeletes extends Listener
         $event->getPayload()->record
             ->setAttribute('deleted_at', Carbon::now()->toDateTimeString())
             ->save();
+
+        $event->getPayload()->record->getModel()->makeEvent('deleted')->fillPayload(['record' => $event->getPayload()->record])->fire();
     }
 }
