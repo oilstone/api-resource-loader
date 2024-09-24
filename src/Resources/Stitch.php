@@ -72,14 +72,12 @@ class Stitch extends Resource
         $table = $schema->getTable();
 
         if ($this->usesTimestamps()) {
-            $schema->timestamp('createdAt')->column('created_at')->sometimes()->nullable()->readonly();
-            $schema->timestamp('updatedAt')->column('updated_at')->sometimes()->nullable()->readonly();
-            $table->timestamps();
+            $schema->timestamp('createdAt')->column('created_at')->readonly()->sometimes()->nullable();
+            $schema->timestamp('updatedAt')->column('updated_at')->readonly()->sometimes()->nullable();
         }
 
         if ($this->usesSoftDeletes()) {
-            $schema->timestamp('deletedAt')->column('deleted_at')->sometimes()->nullable()->readonly()->hidden();
-            $table->timestamp('deleted_at');
+            $schema->timestamp('deletedAt')->column('deleted_at')->readonly()->hidden()->sometimes()->nullable();
         }
 
         foreach ($this->decorators as $decorator) {
