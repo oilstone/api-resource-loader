@@ -11,7 +11,7 @@
     ],
     "require": {
         "php": "^8.2",
-        "garethhudson07/api": "^9.2",
+        "garethhudson07/api": "^9.3",
         "illuminate/support": ">=11.0",
         "illuminate/container": ">=11.0"
     },
