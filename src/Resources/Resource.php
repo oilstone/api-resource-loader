@@ -79,14 +79,14 @@ abstract class Resource
     protected array $decorators = [];
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected string $modelFactory;
+    protected ?string $modelFactory = null;
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected string $transformer;
+    protected ?string $transformer = null;
 
     /**
      * @var array
@@ -437,30 +437,37 @@ abstract class Resource
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getModelFactory(): string
+    public function getModelFactory(): ?string
     {
         return $this->modelFactory;
     }
 
     /**
-     * @param string $modelFactory
+     * @param string|null $modelFactory
      * @return Resource
      */
-    public function setModelFactory(string $modelFactory): Resource
+    public function setModelFactory(?string $modelFactory): Resource
     {
         $this->modelFactory = $modelFactory;
 
         return $this;
     }
 
-    protected function getTransformer(): string
+    /**
+     * @return string|null
+     */
+    protected function getTransformer(): ?string
     {
         return $this->transformer;
     }
 
-    protected function setTransformer(string $transformer): void
+    /**
+     * @param string|null $transformer
+     * @return void
+     */
+    protected function setTransformer(?string $transformer): void
     {
         $this->transformer = $transformer;
     }
