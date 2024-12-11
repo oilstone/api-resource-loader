@@ -458,7 +458,7 @@ abstract class Resource
     /**
      * @return string|null
      */
-    protected function getTransformer(): ?string
+    public function getTransformer(): ?string
     {
         return $this->transformer;
     }
@@ -467,7 +467,7 @@ abstract class Resource
      * @param string|null $transformer
      * @return void
      */
-    protected function setTransformer(?string $transformer): void
+    public function setTransformer(?string $transformer): void
     {
         $this->transformer = $transformer;
     }
