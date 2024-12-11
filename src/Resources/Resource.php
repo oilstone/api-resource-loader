@@ -79,6 +79,16 @@ abstract class Resource
     protected array $decorators = [];
 
     /**
+     * @var string
+     */
+    protected string $modelFactory;
+
+    /**
+     * @var string
+     */
+    protected string $transformer;
+
+    /**
      * @var array
      */
     protected array $cached = [];
@@ -443,6 +453,16 @@ abstract class Resource
         $this->modelFactory = $modelFactory;
 
         return $this;
+    }
+
+    protected function getTransformer(): string
+    {
+        return $this->transformer;
+    }
+
+    protected function setTransformer(string $transformer): void
+    {
+        $this->transformer = $transformer;
     }
 
     /**
