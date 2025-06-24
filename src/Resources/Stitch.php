@@ -40,7 +40,7 @@ class Stitch extends Resource
             return $this->cached['repository'];
         }
 
-        $repository = parent::makeRepository($sentinel, $this->makeModel(), ...$params) ?? new StitchRepository($this->makeModel(), ...$params);
+        $repository = parent::makeRepository($sentinel, $this->makeModel()) ?? new StitchRepository($this->makeModel());
 
         $this->cached['repository'] = $repository;
 

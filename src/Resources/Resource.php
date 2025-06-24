@@ -218,7 +218,7 @@ abstract class Resource
             return $repository;
         }
 
-        $repository = $this->repository($sentinel, ...$params);
+        $repository = $this->repository($sentinel);
 
         $this->cached['repository'] = $repository;
 
@@ -229,7 +229,7 @@ abstract class Resource
      * @param null|Sentinel $sentinel
      * @return null|RepositoryContract
      */
-    protected function repository(?Sentinel $sentinel, ...$params): ?RepositoryContract
+    protected function repository(?Sentinel $sentinel): ?RepositoryContract
     {
         return null;
     }
@@ -266,7 +266,7 @@ abstract class Resource
      */
     protected function transformer(BaseSchema $schema): ?TransformerContract
     {
-        return new Transformer($schema);
+        return new Transformer();
     }
 
     /**
